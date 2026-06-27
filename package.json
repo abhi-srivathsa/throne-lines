@@ -1,0 +1,17 @@
+{
+  "name": "throne-lines",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "An interactive Westeros lineage, throne, and book atlas.",
+  "scripts": {
+    "start": "python3 -m http.server 4173",
+    "build": "node scripts/check-data.mjs"
+  },
+  "keywords": [
+    "westeros",
+    "family-tree",
+    "static-site"
+  ],
+  "license": "UNLICENSED"
+}
