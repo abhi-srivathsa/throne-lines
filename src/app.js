@@ -1,4 +1,5 @@
 import { BOOKS, EXTRA_LINKS, HOUSES, MEDIA, PEOPLE, THRONE } from "./data.js";
+import { PORTRAITS } from "./portraits.js";
 
 const svg = document.querySelector("#familyGraph");
 const detail = document.querySelector("#personDetail");
@@ -96,6 +97,7 @@ function render() {
   renderTrace();
   renderThrone();
   renderSearch();
+  attachPortraitFallbacks();
 }
 
 function renderLegend() {
@@ -241,8 +243,9 @@ function renderGraph() {
       "aria-label": person.name
     });
 
-    const width = 138;
-    const height = 48;
+    const portrait = portraitFor(person);
+    const width = 174;
+    const height = 58;
     group.append(
       node("rect", {
         x: -width / 2,
@@ -255,23 +258,35 @@ function renderGraph() {
       })
     );
     group.append(
-      node("circle", {
-        cx: -width / 2 + 15,
-        cy: -height / 2 + 15,
-        r: 5,
-        fill: house.color
+      node("image", {
+        x: -width / 2 + 8,
+        y: -height / 2 + 8,
+        width: 42,
+        height: 42,
+        href: portrait.fallback,
+        preserveAspectRatio: "xMidYMid slice"
+      })
+    );
+    group.append(
+      node("rect", {
+        x: -width / 2 + 8,
+        y: -height / 2 + 8,
+        width: 42,
+        height: 42,
+        fill: "none",
+        stroke: house.color
       })
     );
     group.append(
       textNode(person.name, {
-        x: 0,
-        y: -2,
+        x: 24,
+        y: -3,
         class: "node-name"
       })
     );
     group.append(
       textNode(person.epithet || house.label, {
-        x: 0,
+        x: 24,
         y: 15,
         class: "node-meta"
       })
@@ -312,8 +327,19 @@ function renderDetail() {
   const children = PEOPLE.filter((entry) => (entry.parents || []).includes(person.id));
   const house = houseById.get(person.house) || houseById.get("other");
   const bookLabels = (person.books || []).map((id) => bookById.get(id)?.title).filter(Boolean);
+  const portrait = portraitFor(person);
+  const sourceLink = portrait.sourceUrl
+    ? `<a href="${portrait.sourceUrl}" target="_blank" rel="noreferrer">${portrait.sourceName}</a>`
+    : portrait.sourceName;
 
   detail.innerHTML = `
+    <div class="detail-portrait" style="--house-color:${house.color}">
+      <img src="${portrait.image}" alt="${person.name} portrait" data-fallback="${portrait.fallback}" />
+      <div class="portrait-source ${portrait.sourceType}">
+        <span>${sourceTypeLabel(portrait.sourceType)}</span>
+        <small>${portrait.sourceLabel}</small>
+      </div>
+    </div>
     <div class="detail-header">
       <span class="house-dot" style="background:${house.color}"></span>
       <p class="eyebrow">${house.label}</p>
@@ -328,6 +354,8 @@ function renderDetail() {
       ${children.length ? `<dt>Children</dt><dd>${children.map((child) => child.name).join(", ")}</dd>` : ""}
       <dt>Appears in</dt><dd>${person.media.map(mediaLabel).join(", ")}</dd>
       ${bookLabels.length ? `<dt>Books</dt><dd>${bookLabels.join(", ")}</dd>` : ""}
+      <dt>Portrait</dt><dd>${sourceLink}</dd>
+      <dt>Traits</dt><dd>${portrait.generatedTraits}</dd>
     </dl>
   `;
 }
@@ -374,8 +402,14 @@ function renderSearch() {
   matches.forEach((person) => {
     const button = document.createElement("button");
     const house = houseById.get(person.house) || houseById.get("other");
+    const portrait = portraitFor(person);
     button.type = "button";
-    button.innerHTML = `<i style="background:${house.color}"></i><span>${person.name}</span><small>${house.label}</small>`;
+    button.innerHTML = `
+      <img src="${portrait.image}" alt="" data-fallback="${portrait.fallback}" />
+      <i style="background:${house.color}"></i>
+      <span>${person.name}</span>
+      <small>${house.label}</small>
+    `;
     button.addEventListener("click", () => {
       selectPerson(person.id);
       state.from = person.id;
@@ -384,16 +418,20 @@ function renderSearch() {
     });
     searchResults.append(button);
   });
+  attachPortraitFallbacks(searchResults);
 }
 
 function renderThrone() {
   timeline.replaceChildren();
   THRONE.forEach((entry, index) => {
+    const person = byId.get(entry.id);
+    const portrait = person ? portraitFor(person) : undefined;
     const card = document.createElement("button");
     card.type = "button";
     card.className = `throne-card ${entry.status}`;
     if (entry.id === state.selectedId) card.classList.add("is-active");
     card.innerHTML = `
+      ${portrait ? `<img src="${portrait.image}" alt="" data-fallback="${portrait.fallback}" />` : ""}
       <span class="ordinal">${String(index + 1).padStart(2, "0")}</span>
       <strong>${entry.ruler}</strong>
       <span>${entry.years}</span>
@@ -432,6 +470,39 @@ function labelList(ids = []) {
 
 function mediaLabel(id) {
   return MEDIA.find((item) => item.id === id)?.label || id;
+}
+
+function portraitFor(person) {
+  return (
+    PORTRAITS[person.id] || {
+      image: "./assets/portraits/generated/aegon_i.svg",
+      fallback: "./assets/portraits/generated/aegon_i.svg",
+      sourceType: "generated",
+      sourceLabel: "Local trait portrait",
+      sourceName: "Original generated asset",
+      sourceUrl: "",
+      generatedTraits: person.note
+    }
+  );
+}
+
+function sourceTypeLabel(type) {
+  if (type === "show") return "Show";
+  if (type === "book-art") return "Book / Lore";
+  return "Generated";
+}
+
+function attachPortraitFallbacks(root = document) {
+  root.querySelectorAll("img[data-fallback]").forEach((image) => {
+    image.addEventListener(
+      "error",
+      () => {
+        if (image.src.endsWith(image.dataset.fallback)) return;
+        image.src = image.dataset.fallback;
+      },
+      { once: true }
+    );
+  });
 }
 
 function node(name, attrs = {}) {

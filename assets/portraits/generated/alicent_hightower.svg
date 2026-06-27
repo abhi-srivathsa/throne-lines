@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 560" role="img" aria-label="Alicent Hightower portrait">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#08090a"/><stop offset="1" stop-color="#89a96b"/></linearGradient>
+    <radialGradient id="glow" cx="50%" cy="18%" r="70%"><stop stop-color="#89a96b" stop-opacity=".35"/><stop offset="1" stop-color="#050607" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="420" height="560" fill="url(#bg)"/>
+  <rect width="420" height="560" fill="url(#glow)"/>
+  <path d="M58 500c28-94 84-142 152-142s124 48 152 142" fill="#111417"/>
+  <path d="M122 178c8-78 58-123 93-123 56 0 96 61 87 132-9 76-51 142-91 142-43 0-98-72-89-151Z" fill="#7a4a33" opacity=".95"/>
+  <path d="M150 172c13-48 105-48 119 0 10 34 3 105-20 131-22 25-56 25-78 0-24-26-31-97-21-131Z" fill="#bf8f70"/>
+  <path d="M143 178c38-38 91-49 134-12-6-43-37-80-75-80-37 0-68 31-59 92Z" fill="#7a4a33"/>
+  <circle cx="184" cy="223" r="5" fill="#7d6b55"/><circle cx="237" cy="223" r="5" fill="#7d6b55"/>
+  <path d="M194 269c13 10 30 10 43 0" fill="none" stroke="#5f3a34" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+  <path d="M102 487h216l-28-92c-43 42-112 42-155 0Z" fill="#89a96b" opacity=".78"/>
+  <path d="M88 516h244" stroke="#d8c48a" stroke-width="3" opacity=".7"/>
+  <text x="210" y="524" text-anchor="middle" fill="#f0eadf" font-family="Georgia, serif" font-size="36" letter-spacing="4">AH</text>
+  <title>Alicent Hightower: auburn or brown hair, composed oldtown courtly features, green and pale gold clothing; Mother of Aegon II, Helaena, Aemond, and Daeron.</title>
+</svg>

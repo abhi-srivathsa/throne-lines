@@ -6,7 +6,8 @@
   "description": "An interactive Westeros lineage, throne, and book atlas.",
   "scripts": {
     "start": "python3 -m http.server 4173",
-    "build": "node scripts/check-data.mjs"
+    "build": "node scripts/check-data.mjs",
+    "sync-portraits": "node scripts/sync-portraits.mjs"
   },
   "keywords": [
     "westeros",

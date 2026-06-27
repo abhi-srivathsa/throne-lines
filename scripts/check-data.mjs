@@ -1,4 +1,10 @@
 import { BOOKS, EXTRA_LINKS, PEOPLE, THRONE } from "../src/data.js";
+import { PORTRAITS } from "../src/portraits.js";
+import { accessSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const people = new Set(PEOPLE.map((person) => person.id));
 const books = new Set(BOOKS.map((book) => book.id));
@@ -16,6 +22,25 @@ for (const person of PEOPLE) {
   }
   for (const book of person.books || []) {
     if (!books.has(book)) errors.push(`${person.id} references missing book ${book}`);
+  }
+  const portrait = PORTRAITS[person.id];
+  if (!portrait) {
+    errors.push(`${person.id} is missing portrait metadata`);
+  } else {
+    if (!portrait.image) errors.push(`${person.id} portrait is missing image`);
+    if (!portrait.fallback) errors.push(`${person.id} portrait is missing fallback`);
+    if (!portrait.sourceType) errors.push(`${person.id} portrait is missing sourceType`);
+    for (const key of ["image", "fallback"]) {
+      const value = portrait[key];
+      if (value?.startsWith("./")) {
+        const localPath = path.join(root, value.slice(2));
+        try {
+          accessSync(localPath);
+        } catch {
+          errors.push(`${person.id} portrait ${key} file is missing: ${value}`);
+        }
+      }
+    }
   }
 }
 
