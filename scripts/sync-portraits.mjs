@@ -1,4 +1,5 @@
 import { mkdir, writeFile, access } from "node:fs/promises";
+import http from "node:http";
 import https from "node:https";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,6 +8,7 @@ import { HOUSES, PEOPLE } from "../src/data.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const generatedDir = path.join(root, "assets", "portraits", "generated");
+const sourcedDir = path.join(root, "assets", "portraits", "sourced");
 const portraitModule = path.join(root, "src", "portraits.js");
 const endpoint = "https://gameofthrones.fandom.com/api.php";
 
@@ -139,9 +141,11 @@ const houseTraits = {
 const houseColor = new Map(HOUSES.map((house) => [house.id, house.color]));
 
 await mkdir(generatedDir, { recursive: true });
+await mkdir(sourcedDir, { recursive: true });
 await Promise.all(PEOPLE.map(writeFallbackPortrait));
 
 const sourced = await fetchPortraitSources();
+const cacheFailures = [];
 const portraits = {};
 
 for (const person of PEOPLE) {
@@ -158,8 +162,12 @@ for (const person of PEOPLE) {
 
   if (source && !generatedOnly.has(person.id)) {
     const sourceType = showSourceIds.has(person.id) ? "show" : "book-art";
+    const cachedImage = await cacheRemotePortrait(person.id, source.image).catch((error) => {
+      cacheFailures.push(`${person.id}: ${error.message}`);
+      return source.image;
+    });
     portraits[person.id] = {
-      image: source.image,
+      image: cachedImage,
       fallback: generatedImage,
       sourceType,
       sourceLabel: sourceType === "show" ? "Show / official guide thumbnail" : "Book / lore illustration thumbnail",
@@ -195,6 +203,10 @@ const counts = Object.values(portraits).reduce((acc, item) => {
 }, {});
 console.log(`Portrait manifest written: ${PEOPLE.length} people.`);
 console.log(counts);
+if (cacheFailures.length) {
+  console.warn("Some remote portraits could not be cached; using remote URLs:");
+  cacheFailures.forEach((failure) => console.warn(`- ${failure}`));
+}
 
 async function fetchPortraitSources() {
   const titles = PEOPLE.map((person) => titleById[person.id] || person.name);
@@ -261,6 +273,63 @@ function fetchJson(url) {
       })
       .on("error", reject);
   });
+}
+
+async function cacheRemotePortrait(id, imageUrl) {
+  const { buffer, contentType } = await fetchBuffer(imageUrl);
+  const ext = extensionForContentType(contentType) || extensionFromUrl(imageUrl) || "jpg";
+  const file = path.join(sourcedDir, `${id}.${ext}`);
+  await writeFile(file, buffer);
+  return `./assets/portraits/sourced/${id}.${ext}`;
+}
+
+function fetchBuffer(url, redirects = 0) {
+  return new Promise((resolve, reject) => {
+    const client = url.startsWith("http://") ? http : https;
+    client
+      .get(url, (response) => {
+        if (
+          response.statusCode >= 300 &&
+          response.statusCode < 400 &&
+          response.headers.location &&
+          redirects < 5
+        ) {
+          response.resume();
+          const nextUrl = new URL(response.headers.location, url).toString();
+          resolve(fetchBuffer(nextUrl, redirects + 1));
+          return;
+        }
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          reject(new Error(`image download failed: ${response.statusCode}`));
+          response.resume();
+          return;
+        }
+        const chunks = [];
+        response.on("data", (chunk) => chunks.push(chunk));
+        response.on("end", () => {
+          resolve({
+            buffer: Buffer.concat(chunks),
+            contentType: String(response.headers["content-type"] || "").split(";")[0]
+          });
+        });
+      })
+      .on("error", reject);
+  });
+}
+
+function extensionForContentType(contentType) {
+  if (contentType === "image/jpeg") return "jpg";
+  if (contentType === "image/png") return "png";
+  if (contentType === "image/webp") return "webp";
+  if (contentType === "image/gif") return "gif";
+  return "";
+}
+
+function extensionFromUrl(url) {
+  const pathname = new URL(url).pathname.toLowerCase();
+  const match = pathname.match(/\.(jpg|jpeg|png|webp|gif)$/);
+  if (!match) return "";
+  return match[1] === "jpeg" ? "jpg" : match[1];
 }
 
 async function writeFallbackPortrait(person) {

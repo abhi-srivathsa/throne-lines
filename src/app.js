@@ -244,10 +244,11 @@ function renderGraph() {
     });
 
     const portrait = portraitFor(person);
-    const width = 174;
-    const height = 58;
+    const width = 196;
+    const height = 68;
     group.append(
       node("rect", {
+        class: "node-card",
         x: -width / 2,
         y: -height / 2,
         width,
@@ -258,36 +259,48 @@ function renderGraph() {
       })
     );
     group.append(
+      node("rect", {
+        class: "portrait-back",
+        x: -width / 2 + 8,
+        y: -height / 2 + 8,
+        width: 52,
+        height: 52,
+        fill: "#090b0c",
+        stroke: "rgba(216, 196, 138, 0.18)"
+      })
+    );
+    group.append(
       node("image", {
         x: -width / 2 + 8,
         y: -height / 2 + 8,
-        width: 42,
-        height: 42,
-        href: portrait.fallback,
+        width: 52,
+        height: 52,
+        href: portrait.image,
         preserveAspectRatio: "xMidYMid slice"
       })
     );
     group.append(
       node("rect", {
+        class: "portrait-border",
         x: -width / 2 + 8,
         y: -height / 2 + 8,
-        width: 42,
-        height: 42,
+        width: 52,
+        height: 52,
         fill: "none",
         stroke: house.color
       })
     );
     group.append(
       textNode(person.name, {
-        x: 24,
-        y: -3,
+        x: 34,
+        y: -4,
         class: "node-name"
       })
     );
     group.append(
       textNode(person.epithet || house.label, {
-        x: 24,
-        y: 15,
+        x: 34,
+        y: 16,
         class: "node-meta"
       })
     );

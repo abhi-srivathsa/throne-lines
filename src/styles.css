@@ -491,22 +491,30 @@ select:focus {
   transition: opacity 160ms ease;
 }
 
-.person-node rect {
+.person-node .node-card,
+.person-node .portrait-border {
   vector-effect: non-scaling-stroke;
+}
+
+.person-node .node-card {
   transition:
     fill 160ms ease,
     stroke-width 160ms ease,
     filter 160ms ease;
 }
 
-.person-node:hover rect,
-.person-node:focus rect,
-.person-node.is-active rect,
-.person-node.is-path rect {
+.person-node:hover .node-card,
+.person-node:focus .node-card,
+.person-node.is-active .node-card,
+.person-node.is-path .node-card {
   fill: rgba(22, 20, 17, 0.96);
   stroke-width: 2.5;
   filter: url("#softGlow");
   outline: 0;
+}
+
+.person-node .portrait-border {
+  fill: none;
 }
 
 .person-node.is-dim {
